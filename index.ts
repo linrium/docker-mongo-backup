@@ -114,7 +114,7 @@ app.get("/stop", (req, res) => {
 })
 
 app.get("/files", (req, res) => {
-  fs.readdir("/Users/linh/Projects/backup-mongo", (err, filenames) => {
+  fs.readdir(env.output, (err, filenames) => {
     if (err) {
       res.status(400).json({
         message: err

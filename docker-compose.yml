@@ -1,0 +1,13 @@
+version: "3.7"
+
+services:
+  mongo-backup-dev:
+    image: linrium/docker-mongo-backup:1.0.0
+    stop_grace_period: 30s
+    env_file:
+      - .env
+    volumes:
+      - /Users/linh/Projects/test-logs:/dep/logs
+    restart: on-failure:3
+    ports:
+      - 3000:3000
