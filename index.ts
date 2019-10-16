@@ -143,13 +143,12 @@ const cron = new CronJob(
     const today = moment().format('DD/MM/YYYY')
     console.log(`Stopped backup at ${today}`)
   },
-  true,
+  false,
   "Europe/Paris",
   null,
-  true
+  false
 )
 
-// app.use(morgan('common'))
 app.use(log4js.connectLogger(http, { level: 'info' }))
 app.use(bodyParser.json())
 app.use(jwt({ secret: privateKey }).unless({ path: ["/token"] }))
