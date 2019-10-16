@@ -1,6 +1,6 @@
 #!/bin/bash
 
-dir_name="$(date +'%m-%d-%Y')"
+dir_name="$(date +'%d-%m-%Y')"
 host="$host"
 username="$username"
 password="$password"

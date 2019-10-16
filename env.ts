@@ -12,7 +12,9 @@ export const env: { [key: string]: string } = {
   output: processEnv.DB_OUTPUT,
   port: processEnv.PORT,
   adminUsername: processEnv.ADMIN_USERNAME,
-  adminPassword: processEnv.ADMIN_PASSWORD
+  adminPassword: processEnv.ADMIN_PASSWORD,
+  slackHook: processEnv.SLACK_HOOK,
+  nodeEnv: processEnv.NODE_ENV
 }
 
 export const buildEnv = () => {

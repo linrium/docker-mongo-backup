@@ -7,10 +7,18 @@ import jsonwebtoken from "jsonwebtoken"
 import { backup } from "./utils"
 import { env } from './env'
 import log4js from 'log4js'
-import day from 'dayjs'
+import moment from 'moment'
+import { promisify } from 'util'
+import axios from 'axios'
+
+const stat = promisify(fs.stat)
 
 let beingBackup = false
 
+const api = axios.create({
+  baseURL: env.slackHook,
+  timeout: 20000
+})
 const app = express()
 const port = env.port
 const privateKey = "baydidautimthayem"
@@ -49,28 +57,96 @@ const http = log4js.getLogger('http')
 const cron = new CronJob(
   "0 2 * * *",
   async () => {
+    const today = moment().format('DD/MM/YYYY hh[:]mm')
+
     try {
       beingBackup = true
-      const today = day().format('DD/MM/YYYY hh[:]mm')
       log.info(`Starting backup at ${today}`)
-      const stdout = await backup()
+      const {diff, stdout} = await backup()
+
+      const filename = moment().format('DD-MM-YYYY') + '.tar.gz'
+      const stats = await stat(env.output + '/' + filename)
+      const size = stats.size / 1000000.0
       log.info(stdout)
-      log.info(`Backup successfully at ${today}`)
+      log.info(`Backup finished in ${diff} at ${today} archive size ${size} MB`)
+    
+      api.post('', {
+        attachments: [
+          {
+            fallback: `*Backup finished in ${diff} at ${today} archive size ${size} MB*`,
+            pretext: `*Backup finished ${today}*`,
+            fields: [
+              {
+                title: 'Filename',
+                value: filename,
+                short: true
+              },
+              {
+                title: 'Environment',
+                value: env.nodeEnv,
+                short: true
+              },
+              {
+                title: 'Size',
+                value: `${size} MB`,
+                short: true
+              },
+              {
+                title: 'Duration',
+                value: `${diff}s`,
+                short: true
+              }
+            ],
+            color: 'good'
+          }
+        ]
+      })
     } catch (e) {
       log.error(e.error)
       log.error(e.stderr)
+      api.post('', {
+        attachments: [
+          {
+            fallback: `*Backup error ${today} with ${e.error}*`,
+            pretext: `*Backup error ${today}*`,
+            fields: [
+              {
+                title: 'Environment',
+                value: env.nodeEnv,
+                short: true
+              },
+              {
+                title: 'Duration',
+                value: `${e.diff}s`,
+                short: true
+              },
+              {
+                title: 'Message',
+                value: e.stderr,
+                short: false
+              },
+              {
+                title: 'Stack',
+                value: e.error,
+                short: false
+              },
+            ],
+            color: 'danger'
+          }
+        ]
+      })
     } finally {
       beingBackup = false
     }
   },
   () => {
-    const today = day().format('DD/MM/YYYY')
+    const today = moment().format('DD/MM/YYYY')
     console.log(`Stopped backup at ${today}`)
   },
-  false,
+  true,
   "Europe/Paris",
   null,
-  false
+  true
 )
 
 // app.use(morgan('common'))
