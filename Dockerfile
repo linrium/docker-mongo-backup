@@ -22,6 +22,7 @@ COPY yarn.lock /dep/yarn.lock
 RUN cd /dep \
   && yarn install --production
 COPY --from=builder /build/dist ./dep/dist
+COPY --from=builder /build/scripts ./dep/scripts
 
 WORKDIR /dep
 EXPOSE 3000
