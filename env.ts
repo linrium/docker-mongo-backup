@@ -14,7 +14,8 @@ export const env: { [key: string]: string } = {
   adminUsername: processEnv.ADMIN_USERNAME,
   adminPassword: processEnv.ADMIN_PASSWORD,
   slackHook: processEnv.SLACK_HOOK,
-  nodeEnv: processEnv.NODE_ENV
+  nodeEnv: processEnv.NODE_ENV,
+  containerName: processEnv.CONTAINER_NAME
 }
 
 export const buildEnv = () => {

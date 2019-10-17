@@ -25,7 +25,7 @@ EOF
 
 docker run \
 --rm \
---name mongo \
+--name $containerName \
 -p 27018:27017 \
 -v "$output":/backup \
 mongo:4.0.0 \
