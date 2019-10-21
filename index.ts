@@ -14,7 +14,7 @@ import axios from 'axios'
 const stat = promisify(fs.stat)
 
 let beingBackup = false
-//docker run --name docker-mongo-backup --env-file ./.env -p 3000:3000 -v "/Users/linh/Projects/docker-mongo-backup/logs:/dep/logs" -v "/Users/linh/Projects/docker-mongo-backup/data:/dep/backup" -d linrium/docker-mongo-backup
+
 const api = axios.create({
   baseURL: env.slackHook,
   timeout: 20000
@@ -66,7 +66,6 @@ async function onTick() {
     const filename = moment().format('DD-MM-YYYY') + '.tar.gz'
     const stats = await stat('./backup/' + filename)
     const size = stats.size / 1000000.0
-    log.info(stdout)
     log.info(`Backup finished in ${diff} at ${today} archive size ${size} MB`)
   
     api.post('', {
