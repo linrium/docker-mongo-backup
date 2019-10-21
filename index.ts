@@ -14,7 +14,7 @@ import axios from 'axios'
 const stat = promisify(fs.stat)
 
 let beingBackup = false
-
+//docker run --name docker-mongo-backup --env-file ./.env -p 3000:3000 -v "/Users/linh/Projects/docker-mongo-backup/logs:/dep/logs" -v "/Users/linh/Projects/docker-mongo-backup/data:/dep/backup" -d linrium/docker-mongo-backup
 const api = axios.create({
   baseURL: env.slackHook,
   timeout: 20000
@@ -54,90 +54,95 @@ log4js.configure({
 })
 const log = log4js.getLogger('app')
 const http = log4js.getLogger('http')
+
+async function onTick() {
+  const today = moment().format('DD/MM/YYYY hh[:]mm')
+
+  try {
+    beingBackup = true
+    log.info(`Starting backup at ${today}`)
+    const {diff, stdout} = await backup()
+
+    const filename = moment().format('DD-MM-YYYY') + '.tar.gz'
+    const stats = await stat(env.output + '/' + filename)
+    const size = stats.size / 1000000.0
+    log.info(stdout)
+    log.info(`Backup finished in ${diff} at ${today} archive size ${size} MB`)
+  
+    api.post('', {
+      attachments: [
+        {
+          fallback: `*Backup finished in ${diff} at ${today} archive size ${size} MB*`,
+          pretext: `*Backup finished ${today}*`,
+          fields: [
+            {
+              title: 'Filename',
+              value: filename,
+              short: true
+            },
+            {
+              title: 'Environment',
+              value: env.nodeEnv,
+              short: true
+            },
+            {
+              title: 'Size',
+              value: `${size} MB`,
+              short: true
+            },
+            {
+              title: 'Duration',
+              value: `${diff}s`,
+              short: true
+            }
+          ],
+          color: 'good'
+        }
+      ]
+    })
+  } catch (e) {
+    log.error(e.error)
+    log.error(e.stderr)
+    api.post('', {
+      attachments: [
+        {
+          fallback: `*Backup error ${today} with ${e.error}*`,
+          pretext: `*Backup error ${today}*`,
+          fields: [
+            {
+              title: 'Environment',
+              value: env.nodeEnv,
+              short: true
+            },
+            {
+              title: 'Duration',
+              value: `${e.diff}s`,
+              short: true
+            },
+            {
+              title: 'Message',
+              value: e.stderr,
+              short: false
+            },
+            {
+              title: 'Stack',
+              value: e.error,
+              short: false
+            },
+          ],
+          color: 'danger'
+        }
+      ]
+    })
+  } finally {
+    beingBackup = false
+  }
+}
+
 const cron = new CronJob(
   "0 2 * * *",
   async () => {
-    const today = moment().format('DD/MM/YYYY hh[:]mm')
-
-    try {
-      beingBackup = true
-      log.info(`Starting backup at ${today}`)
-      const {diff, stdout} = await backup()
-
-      const filename = moment().format('DD-MM-YYYY') + '.tar.gz'
-      const stats = await stat(env.output + '/' + filename)
-      const size = stats.size / 1000000.0
-      log.info(stdout)
-      log.info(`Backup finished in ${diff} at ${today} archive size ${size} MB`)
-    
-      api.post('', {
-        attachments: [
-          {
-            fallback: `*Backup finished in ${diff} at ${today} archive size ${size} MB*`,
-            pretext: `*Backup finished ${today}*`,
-            fields: [
-              {
-                title: 'Filename',
-                value: filename,
-                short: true
-              },
-              {
-                title: 'Environment',
-                value: env.nodeEnv,
-                short: true
-              },
-              {
-                title: 'Size',
-                value: `${size} MB`,
-                short: true
-              },
-              {
-                title: 'Duration',
-                value: `${diff}s`,
-                short: true
-              }
-            ],
-            color: 'good'
-          }
-        ]
-      })
-    } catch (e) {
-      log.error(e.error)
-      log.error(e.stderr)
-      api.post('', {
-        attachments: [
-          {
-            fallback: `*Backup error ${today} with ${e.error}*`,
-            pretext: `*Backup error ${today}*`,
-            fields: [
-              {
-                title: 'Environment',
-                value: env.nodeEnv,
-                short: true
-              },
-              {
-                title: 'Duration',
-                value: `${e.diff}s`,
-                short: true
-              },
-              {
-                title: 'Message',
-                value: e.stderr,
-                short: false
-              },
-              {
-                title: 'Stack',
-                value: e.error,
-                short: false
-              },
-            ],
-            color: 'danger'
-          }
-        ]
-      })
-    } finally {
-      beingBackup = false
-    }
+    await onTick()
   },
   () => {
     const today = moment().format('DD/MM/YYYY')
@@ -168,13 +173,23 @@ app.post("/token", (req, res) => {
   }
 })
 
+app.post('/run', async (req, res) => {
+  if (!beingBackup) {
+    onTick()
+  }
+  
+  res.json({
+    message: 'backup is running'
+  })
+})
+
 app.get("/start", (req, res) => {
   if (!cron.running) {
     cron.start()
   }
 
   res.json({
-    message: "Started"
+    message: "started"
   })
 })
 
@@ -184,7 +199,7 @@ app.get("/stop", (req, res) => {
   }
 
   res.json({
-    message: "Stopped"
+    message: "stopped"
   })
 })
 
@@ -209,7 +224,7 @@ app.post("/set-time", (req, res) => {
   }
 
   res.json({
-    message: "Set time successfully"
+    message: "set time successfully"
   })
 })
 
@@ -237,7 +252,7 @@ app.get('/logs', (req, res) => {
   })
 })
 
-app.get("/", (req, res) => res.send("Hello world"))
+app.get("/", (req, res) => res.send("hello world"))
 
 app.use(
   (err: any, req: express.Request, res: express.Response, next: () => void) => {

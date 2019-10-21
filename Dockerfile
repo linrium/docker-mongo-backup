@@ -16,8 +16,12 @@ WORKDIR /app
 
 FROM node:12.4.0-alpine
 
+ENV MONGODB_TOOLS_VERSION 4.0.5-r0
+
 COPY package.json /dep/package.json
 COPY yarn.lock /dep/yarn.lock
+
+RUN apk add --no-cache ca-certificates tzdata mongodb-tools=${MONGODB_TOOLS_VERSION} findutils tar
 
 RUN cd /dep \
   && yarn install --production
