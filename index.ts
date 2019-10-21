@@ -64,7 +64,7 @@ async function onTick() {
     const {diff, stdout} = await backup()
 
     const filename = moment().format('DD-MM-YYYY') + '.tar.gz'
-    const stats = await stat(env.output + '/' + filename)
+    const stats = await stat('./backup/' + filename)
     const size = stats.size / 1000000.0
     log.info(stdout)
     log.info(`Backup finished in ${diff} at ${today} archive size ${size} MB`)
