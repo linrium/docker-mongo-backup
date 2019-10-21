@@ -101,6 +101,7 @@ async function onTick() {
       ]
     })
   } catch (e) {
+    log.error(e)
     log.error(e.error)
     log.error(e.stderr)
     api.post('', {
