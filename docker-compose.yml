@@ -2,12 +2,12 @@ version: "3.7"
 
 services:
   app-staging:
-    image: linrium/docker-mongo-backup:1.1.1
+    image: linrium/node-mongo-backup:1.1.4
     stop_grace_period: 30s
     env_file:
-      - .env.staging
+      - .env
     volumes:
-      - /srv/flexiplus-backup-logs/staging:/dep/logs
+      - ./logs:/dep/logs
     deploy:
       replicas: 1
       restart_policy:
@@ -17,19 +17,3 @@ services:
         constraints: [node.role == manager]
     ports:
       - 3000:3000
-  app-master:
-    image: linrium/docker-mongo-backup:1.1.1
-    stop_grace_period: 30s
-    env_file:
-      - .env.master
-    volumes:
-      - /srv/flexiplus-backup-logs/master:/dep/logs
-    deploy:
-      replicas: 1
-      restart_policy:
-        max_attempts: 3
-        condition: on-failure
-      placement:
-        constraints: [node.role == manager]
-    ports:
-      - 3001:3000

@@ -16,4 +16,4 @@ mongodump --host="$host" \
 
 tar --remove-files -cvf "$dir_name.tar.gz" "$dir_name"
 
-find * -type d -ctime +7 | xargs rm -rf
+find ./backup/* -mtime +7 -exec rm {} \;
